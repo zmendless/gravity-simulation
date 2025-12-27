@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit Sim: Ultimate Edition 3.0</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --accent: #00d2ff;
+            --accent-glow: rgba(0, 210, 255, 0.3);
+            --bg-glass: rgba(10, 10, 20, 0.85);
+            --bg-section: rgba(20, 20, 35, 0.7);
+            --border-glass: rgba(255, 255, 255, 0.15);
+            --text-main: #eee;
+            --text-dim: #aaa;
+            --font-main: 'Quicksand', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050508;
+            font-family: var(--font-main);
+            color: var(--text-main);
+            user-select: none;
+        }
+        canvas { display: block; }
+        
+        /* --- Stats Panel (Top Left) --- */
+        #stats-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 200px;
+            background: var(--bg-glass);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border-glass);
+            font-size: 14px;
+            pointer-events: none;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transform: translateX(-120%);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s;
+            opacity: 0;
+            z-index: 100;
+        }
+        #stats-panel.visible {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .panel-header {
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header::before {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-glow);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.8); }
+        }
+
+        .stat-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 8px; 
+            font-weight: 300;
+        }
+        .stat-label { color: #aaa; }
+        .stat-val { font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+
+        /* --- Right Side Panel --- */
+        #side-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 320px;
+            height: 100vh;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid var(--border-glass);
+            box-shadow: -4px 0 30px rgba(0,0,0,0.4);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #side-panel.minimized {
+            transform: translateX(calc(100% - 50px));
+        }
+
+        #panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+
+        #panel-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #minimize-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: var(--font-main);
+        }
+
+        #minimize-btn:hover {
+            background: rgba(0, 210, 255, 0.2);
+            border-color: var(--accent);
+        }
+
+        #panel-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px 0;
+        }
+
+        #panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #panel-content::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+
+        #panel-content::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        .control-section {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: transparent;
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+        }
+
+        /* Minimize tab */
+        #minimize-tab {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateX(-100%) translateY(-50%);
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            padding: 15px 8px;
+            cursor: pointer;
+            writing-mode: vertical-rl;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            opacity: 0;
+            transition: opacity 0.3s, background 0.2s;
+            pointer-events: none;
+        }
+
+        #side-panel.minimized #minimize-tab {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #minimize-tab:hover {
+            background: rgba(0, 210, 255, 0.15);
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-dim);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        .control-input {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            width: 80px;
+            font-family: var(--font-main);
+            transition: all 0.2s;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255,255,255,0.12);
+        }
+
+        .control-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            width: 100%;
+            font-family: var(--font-main);
+            margin-bottom: 8px;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 210, 255, 0.2);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-color {
+            width: 40px;
+            height: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-color:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        /* Keyboard hints */
+        .keyboard-hints {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .key-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            flex: 1 1 auto;
+            min-width: 100px;
+        }
+
+        .key {
+            background: rgba(255,255,255,0.12);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Slider styling */
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-value {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #side-panel {
+                width: 280px;
+            }
+            
+            #stats-panel {
+                width: 160px;
+                padding: 15px;
+            }
+            
+            .control-section {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="stats-panel">
+        <div class="panel-header">Body Data</div>
+        <div class="stat-row"><span class="stat-label">Mass</span><span class="stat-val" id="st-mass">0</span></div>
+        <div class="stat-row"><span class="stat-label">Velocity</span><span class="stat-val" id="st-vel">0</span></div>
+        <div class="stat-row"><span class="stat-label">Pos X</span><span class="stat-val" id="st-x">0</span></div>
+        <div class="stat-row"><span class="stat-label">Pos Y</span><span class="stat-val" id="st-y">0</span></div>
+    </div>
+
+    <div id="side-panel">
+        <div id="minimize-tab" onclick="event.stopPropagation(); togglePanel();">Controls</div>
+        
+        <div id="panel-header">
+            <div id="panel-title">
+                <span>⚙</span>
+                <span>Controls</span>
+            </div>
+            <button id="minimize-btn" onclick="event.stopPropagation(); togglePanel();">Hide</button>
+        </div>
+        
+        <div id="panel-content">
+            <!-- Physics Section -->
+            <div class="control-section">
+                <div class="section-title">Physics</div>
+                <div class="control-item">
+                    <span class="control-label">Gravity</span>
+                    <input type="number" class="control-input" id="gravity-input" step="0.1" min="0.1" max="2">
+                </div>
+                <div class="slider-container">
+                    <input type="range" id="gravity-slider" min="0.1" max="2" step="0.1">
+                </div>
+                
+                <div class="control-item" style="margin-top: 15px;">
+                    <span class="control-label">Time Scale</span>
+                    <input type="number" class="control-input" id="timescale-input" step="0.1" min="0" max="3">
+                </div>
+                <div class="slider-container">
+                    <input type="range" id="timescale-slider" min="0" max="3" step="0.1">
+                </div>
+
+                <div class="control-item" style="margin-top: 15px;">
+                    <span class="control-label">Collisions</span>
+                    <input type="checkbox" class="control-checkbox" id="collisions-check" checked>
+                </div>
+                
+                <div class="control-item">
+                    <span class="control-label">Paused</span>
+                    <input type="checkbox" class="control-checkbox" id="paused-check">
+                </div>
+            </div>
+
+            <!-- Creation Section -->
+            <div class="control-section">
+                <div class="section-title">Creation</div>
+                <div class="control-item">
+                    <span class="control-label">Mass</span>
+                    <input type="number" class="control-input" id="mass-input" step="1" min="1" max="100">
+                </div>
+                <div class="slider-container">
+                    <input type="range" id="mass-slider" min="1" max="100" step="1">
+                </div>
+
+                <div class="control-item" style="margin-top: 15px;">
+                    <span class="control-label">Color</span>
+                    <div class="color-picker-wrapper">
+                        <input type="color" class="control-color" id="color-picker">
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div class="keyboard-hints">
+                        <div class="key-hint"><span class="key">RMB</span> Drag to launch</div>
+                        <div class="key-hint"><span class="key">LMB</span> Select body</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Section -->
+            <div class="control-section">
+                <div class="section-title">View</div>
+                <div class="control-item">
+                    <span class="control-label">Show Grid</span>
+                    <input type="checkbox" class="control-checkbox" id="grid-check" checked>
+                </div>
+                
+                <div class="control-item">
+                    <span class="control-label">Track Selected</span>
+                    <input type="checkbox" class="control-checkbox" id="follow-check">
+                </div>
+
+                <div class="control-item">
+                    <span class="control-label">Mute Audio</span>
+                    <input type="checkbox" class="control-checkbox" id="mute-check">
+                </div>
+
+                <button class="control-btn" onclick="resetCamera()">Reset Camera</button>
+
+                <div class="keyboard-hints" style="margin-top: 15px;">
+                    <div class="key-hint"><span class="key">Scroll</span> Zoom</div>
+                    <div class="key-hint"><span class="key">Space</span> Pause</div>
+                </div>
+            </div>
+
+            <!-- Presets Section -->
+            <div class="control-section">
+                <div class="section-title">Presets</div>
+                <button class="control-btn" onclick="loadSolarSystem()">☀️ Solar System</button>
+                <button class="control-btn" onclick="loadBinaryStar()">⭐ Binary Stars</button>
+                <button class="control-btn" onclick="loadGalaxy()">🌌 Galaxy</button>
+                <button class="control-btn" onclick="loadChaos()">💫 Chaos</button>
+            </div>
+
+            <!-- Tools Section -->
+            <div class="control-section">
+                <div class="section-title">Tools</div>
+                <button class="control-btn" onclick="clearAll()">🗑️ Clear All</button>
+                
+                <div style="margin-top: 15px; padding: 12px; background: rgba(255,0,0,0.1); border: 1px solid rgba(255,0,0,0.3); border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: #ff6666; text-align: center;">
+                        Danger Zone
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI Elements
+        const statsPanel = document.getElementById('stats-panel');
+        const stMass = document.getElementById('st-mass');
+        const stVel = document.getElementById('st-vel');
+        const stX = document.getElementById('st-x');
+        const stY = document.getElementById('st-y');
+
+        let width, height;
+        
+        // --- Sound Engine (Procedural) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioInitialized = false;
+
+        const Sounds = {
+            playTone: (freq, type, duration, vol = 0.1) => {
+                if(settings.mute) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            },
+            
+            explosion: (mass) => {
+                if(settings.mute) return;
+                const bufferSize = audioCtx.sampleRate * 0.5;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.5);
+
+                const gain = audioCtx.createGain();
+                const vol = Math.min(0.5, mass / 100);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start();
+            },
+
+            shoot: () => {
+                if(settings.mute) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            }
+        };
+
+        function resumeAudio() {
+            if (!audioInitialized) {
+                audioCtx.resume();
+                audioInitialized = true;
+            }
+        }
+
+        // --- Simulation State ---
+        let bodies = [];
+        let particles = [];
+        let stars = [];
+
+        const camera = { 
+            x: 0, y: 0, zoom: 1,
+            tx: 0, ty: 0, tzoom: 1
+        };
+        let selectedBody = null;
+        
+        const settings = {
+            G: 0.5,
+            timeScale: 1.0,
+            paused: false,
+            collisions: true,
+            trailLength: 50,
+            showGrid: true,
+            followSelected: false,
+            mute: false,
+            spawnMass: 15,
+            spawnColor: '#00d2ff'
+        };
+
+        let dragStart = { x: 0, y: 0 };
+        let isDraggingCam = false;
+        let isSlingshotting = false;
+        let slingStart = { x: 0, y: 0 };
+        let currMouse = { x: 0, y: 0 };
+
+        // --- UI Control Functions ---
+        function togglePanel() {
+            const panel = document.getElementById('side-panel');
+            panel.classList.toggle('minimized');
+            const btn = document.getElementById('minimize-btn');
+            btn.textContent = panel.classList.contains('minimized') ? 'Show' : 'Hide';
+        }
+
+        function clearAll() {
+            bodies = [];
+            particles = [];
+            selectedBody = null;
+        }
+
+        function resetCamera() {
+            camera.tx = 0;
+            camera.ty = 0;
+            camera.tzoom = 1;
+            settings.followSelected = false;
+            document.getElementById('follow-check').checked = false;
+        }
+
+        // Sync controls with settings
+        function initControls() {
+            const gravityInput = document.getElementById('gravity-input');
+            const gravitySlider = document.getElementById('gravity-slider');
+            const timescaleInput = document.getElementById('timescale-input');
+            const timescaleSlider = document.getElementById('timescale-slider');
+            const massInput = document.getElementById('mass-input');
+            const massSlider = document.getElementById('mass-slider');
+            const colorPicker = document.getElementById('color-picker');
+            
+            // Set initial values
+            gravityInput.value = settings.G;
+            gravitySlider.value = settings.G;
+            timescaleInput.value = settings.timeScale;
+            timescaleSlider.value = settings.timeScale;
+            massInput.value = settings.spawnMass;
+            massSlider.value = settings.spawnMass;
+            colorPicker.value = settings.spawnColor;
+            
+            // Gravity sync
+            gravityInput.addEventListener('input', (e) => {
+                settings.G = parseFloat(e.target.value);
+                gravitySlider.value = settings.G;
+            });
+            gravitySlider.addEventListener('input', (e) => {
+                settings.G = parseFloat(e.target.value);
+                gravityInput.value = settings.G;
+            });
+            
+            // Time scale sync
+            timescaleInput.addEventListener('input', (e) => {
+                settings.timeScale = parseFloat(e.target.value);
+                timescaleSlider.value = settings.timeScale;
+            });
+            timescaleSlider.addEventListener('input', (e) => {
+                settings.timeScale = parseFloat(e.target.value);
+                timescaleInput.value = settings.timeScale;
+            });
+            
+            // Mass sync
+            massInput.addEventListener('input', (e) => {
+                settings.spawnMass = parseFloat(e.target.value);
+                massSlider.value = settings.spawnMass;
+            });
+            massSlider.addEventListener('input', (e) => {
+                settings.spawnMass = parseFloat(e.target.value);
+                massInput.value = settings.spawnMass;
+            });
+            
+            // Color
+            colorPicker.addEventListener('input', (e) => {
+                settings.spawnColor = e.target.value;
+            });
+            
+            // Checkboxes
+            document.getElementById('collisions-check').addEventListener('change', (e) => {
+                settings.collisions = e.target.checked;
+            });
+            document.getElementById('paused-check').addEventListener('change', (e) => {
+                settings.paused = e.target.checked;
+            });
+            document.getElementById('grid-check').addEventListener('change', (e) => {
+                settings.showGrid = e.target.checked;
+            });
+            document.getElementById('follow-check').addEventListener('change', (e) => {
+                settings.followSelected = e.target.checked;
+            });
+            document.getElementById('mute-check').addEventListener('change', (e) => {
+                settings.mute = e.target.checked;
+            });
+        }
+
+        // --- Resize ---
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initStars();
+        }
+        window.addEventListener('resize', resize);
+        
+        const toWorld = (sx, sy) => ({
+            x: (sx - width/2) / camera.zoom + camera.x,
+            y: (sy - height/2) / camera.zoom + camera.y
+        });
+        const toScreen = (wx, wy) => ({
+            x: (wx - camera.x) * camera.zoom + width/2,
+            y: (wy - camera.y) * camera.zoom + height/2
+        });
+        const toWorldTarget = (sx, sy) => ({
+            x: (sx - width/2) / camera.tzoom + camera.tx,
+            y: (sy - height/2) / camera.tzoom + camera.ty
+        });
+
+        // --- Classes ---
+        class Star {
+            constructor() {
+                this.x = (Math.random() - 0.5) * 5000;
+                this.y = (Math.random() - 0.5) * 5000;
+                this.size = Math.random() * 1.5;
+                this.parallax = Math.random() * 0.1 + 0.02;
+                this.alpha = Math.random() * 0.5 + 0.1;
+            }
+            draw() {
+                const screenX = (this.x - camera.x * this.parallax) * camera.zoom + width/2;
+                const screenY = (this.y - camera.y * this.parallax) * camera.zoom + height/2;
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.fillRect(screenX, screenY, this.size * camera.zoom, this.size * camera.zoom);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, speed = 5) {
+                this.x = x; this.y = y;
+                this.vx = (Math.random() - 0.5) * speed;
+                this.vy = (Math.random() - 0.5) * speed;
+                this.life = 1.0;
+                this.color = color;
+                this.decay = Math.random() * 0.02 + 0.01;
+            }
+            update() {
+                if (settings.paused) return;
+                this.x += this.vx * settings.timeScale;
+                this.y += this.vy * settings.timeScale;
+                this.life -= this.decay * settings.timeScale;
+            }
+            draw() {
+                const s = toScreen(this.x, this.y);
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 2 * camera.zoom, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class Body {
+            constructor(x, y, vx, vy, mass, color, isStatic = false) {
+                this.x = x; this.y = y;
+                this.vx = vx; this.vy = vy;
+                this.mass = mass;
+                this.color = color;
+                this.radius = Math.cbrt(mass) * 4; 
+                this.isStatic = isStatic;
+                this.history = [];
+            }
+            update() {
+                if (this.isStatic || settings.paused) return;
+                let fx = 0, fy = 0;
+                for (let other of bodies) {
+                    if (other === this) continue;
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const distSq = dx*dx + dy*dy;
+                    const dist = Math.sqrt(distSq);
+                    if (dist > this.radius + other.radius) {
+                        const force = (settings.G * this.mass * other.mass) / distSq;
+                        fx += force * (dx / dist);
+                        fy += force * (dy / dist);
+                    }
+                }
+                this.vx += fx / this.mass * settings.timeScale;
+                this.vy += fy / this.mass * settings.timeScale;
+                this.x += this.vx * settings.timeScale;
+                this.y += this.vy * settings.timeScale;
+
+                if (settings.trailLength > 0 && Math.random() > 0.6) {
+                    this.history.push({x: this.x, y: this.y});
+                    if (this.history.length > settings.trailLength) this.history.shift();
+                }
+            }
+            draw() {
+                const s = toScreen(this.x, this.y);
+                const r = this.radius * camera.zoom;
+                
+                if (this.history.length > 1 && settings.trailLength > 0) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = Math.max(1, r * 0.2);
+                    ctx.globalAlpha = 0.4;
+                    const start = toScreen(this.history[0].x, this.history[0].y);
+                    ctx.moveTo(start.x, start.y);
+                    for (let p of this.history) {
+                        const sp = toScreen(p.x, p.y);
+                        ctx.lineTo(sp.x, sp.y);
+                    }
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0;
+                }
+
+                if (this === selectedBody) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.arc(s.x, s.y, r + 8 * camera.zoom, 0, Math.PI*2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                ctx.beginPath();
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 20 * camera.zoom;
+                ctx.shadowColor = this.color;
+                ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function initStars() {
+            stars = [];
+            for(let i=0; i<300; i++) stars.push(new Star());
+        }
+        resize();
+
+        function checkCollisions() {
+            if (!settings.collisions || settings.paused) return;
+            for (let i = bodies.length - 1; i >= 0; i--) {
+                for (let j = i - 1; j >= 0; j--) {
+                    const b1 = bodies[i];
+                    const b2 = bodies[j];
+                    const dx = b1.x - b2.x;
+                    const dy = b1.y - b2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if (dist < (b1.radius + b2.radius) * 0.8) {
+                        const newMass = b1.mass + b2.mass;
+                        const newVx = (b1.vx * b1.mass + b2.vx * b2.mass) / newMass;
+                        const newVy = (b1.vy * b1.mass + b2.vy * b2.mass) / newMass;
+                        const newX = (b1.x * b1.mass + b2.x * b2.mass) / newMass;
+                        const newY = (b1.y * b1.mass + b2.y * b2.mass) / newMass;
+                        
+                        Sounds.explosion(newMass);
+
+                        const survivor = b1.mass > b2.mass ? b1 : b2;
+                        
+                        for(let k=0; k<12; k++) {
+                            const p = new Particle(newX, newY, survivor.color, 8);
+                            p.vx += newVx * 0.5;
+                            p.vy += newVy * 0.5;
+                            particles.push(p);
+                        }
+
+                        b2.mass = newMass;
+                        b2.vx = newVx; b2.vy = newVy;
+                        b2.x = newX; b2.y = newY;
+                        b2.radius = Math.cbrt(newMass) * 4;
+                        b2.history = []; 
+                        
+                        if (selectedBody === b1) selectedBody = b2;
+                        bodies.splice(i, 1);
+                        break; 
+                    }
+                }
+            }
+        }
+
+        function drawTrajectory(startX, startY, vx, vy, mass) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 2;
+            let simX = startX, simY = startY, simVx = vx, simVy = vy;
+            const startScreen = toScreen(simX, simY);
+            ctx.moveTo(startScreen.x, startScreen.y);
+            
+            for(let i=0; i<100; i++) {
+                let fx = 0, fy = 0;
+                for(let other of bodies) {
+                    const dx = other.x - simX, dy = other.y - simY;
+                    const d2 = dx*dx + dy*dy;
+                    if(d2 > 200) {
+                        const f = (settings.G * mass * other.mass) / d2;
+                        const d = Math.sqrt(d2);
+                        fx += f * (dx/d); fy += f * (dy/d);
+                    }
+                }
+                simVx += fx / mass; simVy += fy / mass;
+                simX += simVx; simY += simVy;
+                const screen = toScreen(simX, simY);
+                ctx.lineTo(screen.x, screen.y);
+            }
+            ctx.stroke();
+        }
+
+        function loadSolarSystem() {
+            bodies = []; settings.G = 0.5;
+            bodies.push(new Body(0, 0, 0, 0, 3000, '#ffcc00', false));
+            bodies.push(new Body(400, 0, 0, 1.9, 30, '#00d2ff'));
+            bodies.push(new Body(400, 40, -1.2, 1.9, 2, '#fff'));
+            bodies.push(new Body(650, 0, 0, 1.5, 60, '#ff4d4d'));
+            bodies.push(new Body(1100, 0, 0, 1.1, 150, '#cc9966'));
+            resetCamera();
+            document.getElementById('gravity-input').value = settings.G;
+            document.getElementById('gravity-slider').value = settings.G;
+        }
+        
+        function loadBinaryStar() {
+            bodies = [];
+            bodies.push(new Body(-200, 0, 0, 1.5, 1000, '#ffaa00'));
+            bodies.push(new Body(200, 0, 0, -1.5, 1000, '#00aaff'));
+            for(let i=0; i<20; i++) bodies.push(new Body((Math.random()-0.5)*1000, (Math.random()-0.5)*1000, (Math.random()-0.5)*4, (Math.random()-0.5)*4, 5, '#888'));
+            resetCamera();
+        }
+        
+        function loadChaos() {
+            bodies = [];
+            for(let i=0; i<50; i++) bodies.push(new Body((Math.random()-0.5)*width, (Math.random()-0.5)*height, 0, 0, Math.random()*20+5, `hsl(${Math.random()*360}, 70%, 50%)`));
+        }
+        
+        function loadGalaxy() {
+            bodies = [];
+            bodies.push(new Body(0, 0, 0, 0, 5000, '#fff', true));
+            for(let i=0; i<150; i++) {
+                const angle = Math.random() * Math.PI * 2, dist = 300 + Math.random() * 1200;
+                const v = Math.sqrt(settings.G * 5000 / dist);
+                bodies.push(new Body(Math.cos(angle)*dist, Math.sin(angle)*dist, Math.sin(angle)*-v, Math.cos(angle)*v, Math.random()*5+2, `hsl(${200+Math.random()*60}, 80%, 70%)`));
+            }
+            camera.tzoom = 0.3;
+        }
+
+        // --- Inputs ---
+        canvas.addEventListener('mousedown', e => {
+            resumeAudio();
+            const mouseWorld = toWorld(e.clientX, e.clientY);
+
+            if (e.button === 2) { 
+                isSlingshotting = true;
+                slingStart = { x: e.clientX, y: e.clientY };
+            } else { 
+                let clickedBody = null;
+                for(let b of bodies) {
+                    const dx = b.x - mouseWorld.x;
+                    const dy = b.y - mouseWorld.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < b.radius + 10/camera.zoom) {
+                        clickedBody = b; break;
+                    }
+                }
+                if (clickedBody) {
+                    selectedBody = clickedBody;
+                    Sounds.playTone(400, 'sine', 0.1, 0.05);
+                } else {
+                    selectedBody = null;
+                    isDraggingCam = true;
+                    dragStart = { x: e.clientX, y: e.clientY };
+                }
+            }
+        });
+
+        window.addEventListener('mousemove', e => {
+            currMouse = { x: e.clientX, y: e.clientY };
+            if (isDraggingCam) {
+                const dx = e.clientX - dragStart.x;
+                const dy = e.clientY - dragStart.y;
+                camera.tx -= dx / camera.zoom;
+                camera.ty -= dy / camera.zoom;
+                dragStart = { x: e.clientX, y: e.clientY };
+                settings.followSelected = false;
+                document.getElementById('follow-check').checked = false;
+            }
+        });
+
+        window.addEventListener('mouseup', e => {
+            if (isSlingshotting) {
+                const dx = slingStart.x - e.clientX;
+                const dy = slingStart.y - e.clientY;
+                const worldPos = toWorld(slingStart.x, slingStart.y);
+                const power = 0.05;
+                const newB = new Body(worldPos.x, worldPos.y, dx*power, dy*power, settings.spawnMass, settings.spawnColor);
+                bodies.push(newB);
+                selectedBody = newB;
+                Sounds.shoot();
+            }
+            isSlingshotting = false;
+            isDraggingCam = false;
+        });
+
+        window.addEventListener('keydown', e => { 
+            if (e.code === 'Space') {
+                settings.paused = !settings.paused;
+                document.getElementById('paused-check').checked = settings.paused;
+            }
+        });
+        
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const zoomSensitivity = 0.001;
+            const delta = -e.deltaY * zoomSensitivity;
+            const newZoom = Math.min(Math.max(camera.tzoom + delta * camera.tzoom, 0.05), 5);
+            
+            const mouseWorld = toWorldTarget(e.clientX, e.clientY);
+            camera.tzoom = newZoom;
+            camera.tx = mouseWorld.x - (e.clientX - width/2) / camera.tzoom;
+            camera.ty = mouseWorld.y - (e.clientY - height/2) / camera.tzoom;
+        }, { passive: false });
+
+        function drawGrid() {
+            if(!settings.showGrid) return;
+            const GRID = 100;
+            const tl = toWorld(0, 0);
+            const br = toWorld(width, height);
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            const startX = Math.floor(tl.x / GRID) * GRID;
+            const startY = Math.floor(tl.y / GRID) * GRID;
+            for(let x=startX; x<br.x; x+=GRID) { const s = toScreen(x, 0); ctx.moveTo(s.x, 0); ctx.lineTo(s.x, height); }
+            for(let y=startY; y<br.y; y+=GRID) { const s = toScreen(0, y); ctx.moveTo(0, s.y); ctx.lineTo(width, s.y); }
+            ctx.stroke();
+        }
+
+        function drawSlingshot() {
+            if(isSlingshotting) {
+                ctx.beginPath();
+                ctx.strokeStyle = settings.spawnColor;
+                ctx.lineWidth = 2;
+                ctx.moveTo(slingStart.x, slingStart.y);
+                ctx.lineTo(currMouse.x, currMouse.y);
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = settings.spawnColor;
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(slingStart.x, slingStart.y, Math.cbrt(settings.spawnMass)*4*camera.zoom, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+
+                const dx = slingStart.x - currMouse.x;
+                const dy = slingStart.y - currMouse.y;
+                const worldPos = toWorld(slingStart.x, slingStart.y);
+                drawTrajectory(worldPos.x, worldPos.y, dx*0.05, dy*0.05, settings.spawnMass);
+            }
+        }
+
+        function updateStats() {
+            if (selectedBody && bodies.includes(selectedBody)) {
+                statsPanel.classList.add('visible');
+                stMass.innerText = selectedBody.mass.toFixed(1);
+                stVel.innerText = Math.sqrt(selectedBody.vx**2 + selectedBody.vy**2).toFixed(2);
+                stX.innerText = selectedBody.x.toFixed(0);
+                stY.innerText = selectedBody.y.toFixed(0);
+                if (settings.followSelected) {
+                    camera.tx = selectedBody.x;
+                    camera.ty = selectedBody.y;
+                }
+            } else {
+                statsPanel.classList.remove('visible');
+                settings.followSelected = false;
+                selectedBody = null;
+            }
+        }
+
+        function lerp(start, end, amt) {
+            return (1 - amt) * start + amt * end;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            camera.x = lerp(camera.x, camera.tx, 0.1);
+            camera.y = lerp(camera.y, camera.ty, 0.1);
+            camera.zoom = lerp(camera.zoom, camera.tzoom, 0.1);
+
+            checkCollisions();
+            for(let b of bodies) b.update();
+            for(let i=particles.length-1; i>=0; i--) {
+                particles[i].update();
+                if(particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            updateStats();
+
+            ctx.fillStyle = '#050508';
+            ctx.fillRect(0, 0, width, height);
+            
+            for(let s of stars) s.draw();
+            drawGrid();
+            for(let b of bodies) b.draw();
+            for(let p of particles) p.draw();
+            drawSlingshot();
+        }
+
+        loadSolarSystem();
+        initControls();
+        initStars();
+        animate();
+
+    </script>
+</body>
+</html>
