@@ -840,21 +840,26 @@
             draw() {
                 const s = toScreen(this.x, this.y);
                 const r = this.radius * camera.zoom;
-                
-                if (this.history.length > 1 && settings.trailLength > 0) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = Math.max(1, r * 0.2);
-                    ctx.globalAlpha = 0.4;
-                    const start = toScreen(this.history[0].x, this.history[0].y);
-                    ctx.moveTo(start.x, start.y);
-                    for (let p of this.history) {
-                        const sp = toScreen(p.x, p.y);
-                        ctx.lineTo(sp.x, sp.y);
-                    }
-                    ctx.stroke();
-                    ctx.globalAlpha = 1.0;
-                }
+if (this.history.length > 1) {
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = Math.max(1, r * 0.2);
+
+    for (let i = 1; i < this.history.length; i++) {
+        const a = i / this.history.length; // 0 → 1
+        ctx.globalAlpha = a * 0.4;
+
+        const p0 = toScreen(this.history[i - 1].x, this.history[i - 1].y);
+        const p1 = toScreen(this.history[i].x, this.history[i].y);
+
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1.0;
+}
+
 
                 if (this === selectedBody) {
                     ctx.beginPath();
@@ -1132,12 +1137,14 @@
             camera.y = lerp(camera.y, camera.ty, 0.1);
             camera.zoom = lerp(camera.zoom, camera.tzoom, 0.1);
 
+            for(let i = 0; i < 10; i++) {
             checkCollisions();
             for(let b of bodies) b.update();
             for(let i=particles.length-1; i>=0; i--) {
                 particles[i].update();
                 if(particles[i].life <= 0) particles.splice(i, 1);
             }
+        }
 
             updateStats();
 
