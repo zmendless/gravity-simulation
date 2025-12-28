@@ -309,6 +309,16 @@
             transform: translateY(0);
         }
 
+        .control-btn.danger {
+            background: rgba(255, 50, 50, 0.15);
+            border-color: rgba(255, 50, 50, 0.3);
+        }
+
+        .control-btn.danger:hover {
+            background: rgba(255, 50, 50, 0.3);
+            border-color: rgba(255, 50, 50, 0.5);
+        }
+
         .color-picker-wrapper {
             display: flex;
             align-items: center;
@@ -391,13 +401,37 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .slider-value {
             font-size: 0.75rem;
             color: var(--accent);
             font-weight: 600;
-            text-align: right;
+        }
+
+        /* Edit panel enhancements */
+        .edit-control-group {
+            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .edit-section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-weight: 600;
         }
 
         /* Responsive adjustments */
@@ -453,23 +487,23 @@
             <!-- Physics Section -->
             <div class="control-section">
                 <div class="section-title">Physics</div>
-                <div class="control-item">
-                    <span class="control-label">Gravity</span>
-                    <input type="number" class="control-input" id="gravity-input" step="0.1" min="0.1" max="2">
-                </div>
                 <div class="slider-container">
-                    <input type="range" id="gravity-slider" min="0.1" max="2" step="0.1">
+                    <div class="slider-header">
+                        <span class="control-label">Gravity</span>
+                        <span class="slider-value" id="gravity-value">0.5</span>
+                    </div>
+                    <input type="range" id="gravity-slider" min="0.1" max="2" step="0.1" value="0.5">
                 </div>
                 
-                <div class="control-item" style="margin-top: 15px;">
-                    <span class="control-label">Sim Speed</span>
-                    <input type="number" class="control-input" id="speed-input" step="1" min="1" max="50">
-                </div>
                 <div class="slider-container">
-                    <input type="range" id="speed-slider" min="1" max="50" step="1">
+                    <div class="slider-header">
+                        <span class="control-label">Sim Speed</span>
+                        <span class="slider-value" id="speed-value">10</span>
+                    </div>
+                    <input type="range" id="speed-slider" min="1" max="50" step="1" value="10">
                 </div>
 
-                <div class="control-item" style="margin-top: 15px;">
+                <div class="control-item">
                     <span class="control-label">Collisions</span>
                     <input type="checkbox" class="control-checkbox" id="collisions-check" checked>
                 </div>
@@ -483,18 +517,18 @@
             <!-- Creation Section -->
             <div class="control-section">
                 <div class="section-title">Creation</div>
-                <div class="control-item">
-                    <span class="control-label">Mass</span>
-                    <input type="number" class="control-input" id="mass-input" step="1" min="1" max="100">
-                </div>
                 <div class="slider-container">
-                    <input type="range" id="mass-slider" min="1" max="100" step="1">
+                    <div class="slider-header">
+                        <span class="control-label">Mass</span>
+                        <span class="slider-value" id="mass-value">15</span>
+                    </div>
+                    <input type="range" id="mass-slider" min="1" max="100" step="1" value="15">
                 </div>
 
-                <div class="control-item" style="margin-top: 15px;">
+                <div class="control-item">
                     <span class="control-label">Color</span>
                     <div class="color-picker-wrapper">
-                        <input type="color" class="control-color" id="color-picker">
+                        <input type="color" class="control-color" id="color-picker" value="#00d2ff">
                     </div>
                 </div>
 
@@ -509,25 +543,47 @@
 
             <!-- Edit Section -->
             <div class="control-section" id="edit-section" style="display: none;">
-                <div class="section-title">Edit Selected</div>
-                <div class="control-item">
-                    <span class="control-label">Mass</span>
-                    <input type="number" class="control-input" id="edit-mass" step="1">
+                <div class="section-title">Edit Selected (<span id="selected-count">0</span>)</div>
+                
+                <div class="edit-control-group">
+                    <div class="edit-section-label">Physical Properties</div>
+                    <div class="slider-container">
+                        <div class="slider-header">
+                            <span class="control-label">Mass</span>
+                            <span class="slider-value" id="edit-mass-value">15</span>
+                        </div>
+                        <input type="range" id="edit-mass-slider" min="1" max="200" step="1" value="15">
+                    </div>
                 </div>
-                <div class="control-item">
-                    <span class="control-label">Velocity X</span>
-                    <input type="number" class="control-input" id="edit-vx" step="0.1">
+
+                <div class="edit-control-group">
+                    <div class="edit-section-label">Velocity</div>
+                    <div class="slider-container">
+                        <div class="slider-header">
+                            <span class="control-label">Velocity X</span>
+                            <span class="slider-value" id="edit-vx-value">0.0</span>
+                        </div>
+                        <input type="range" id="edit-vx-slider" min="-10" max="10" step="0.1" value="0">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-header">
+                            <span class="control-label">Velocity Y</span>
+                            <span class="slider-value" id="edit-vy-value">0.0</span>
+                        </div>
+                        <input type="range" id="edit-vy-slider" min="-10" max="10" step="0.1" value="0">
+                    </div>
                 </div>
-                <div class="control-item">
-                    <span class="control-label">Velocity Y</span>
-                    <input type="number" class="control-input" id="edit-vy" step="0.1">
+
+                <div class="edit-control-group">
+                    <div class="edit-section-label">Appearance</div>
+                    <div class="control-item">
+                        <span class="control-label">Color</span>
+                        <input type="color" class="control-color" id="edit-color">
+                    </div>
                 </div>
-                <div class="control-item">
-                    <span class="control-label">Color</span>
-                    <input type="color" class="control-color" id="edit-color">
-                </div>
-                <button class="control-btn" onclick="applyEdits()">Apply Changes</button>
-                <button class="control-btn" onclick="deleteSelected()">🗑️ Delete Selected</button>
+
+                <button class="control-btn" onclick="applyEdits()">✓ Apply Changes</button>
+                <button class="control-btn danger" onclick="deleteSelected()">🗑️ Delete Selected</button>
             </div>
 
             <!-- View Section -->
@@ -554,11 +610,6 @@
                 </div>
 
                 <div class="control-item">
-                    <span class="control-label">Grav Field</span>
-                    <input type="checkbox" class="control-checkbox" id="grav-field-check">
-                </div>
-
-                <div class="control-item">
                     <span class="control-label">Mute Audio</span>
                     <input type="checkbox" class="control-checkbox" id="mute-check">
                 </div>
@@ -568,6 +619,7 @@
                 <div class="keyboard-hints" style="margin-top: 15px;">
                     <div class="key-hint"><span class="key">Scroll</span> Zoom</div>
                     <div class="key-hint"><span class="key">Space</span> Pause</div>
+                    <div class="key-hint"><span class="key">Del</span> Delete</div>
                 </div>
             </div>
 
@@ -586,13 +638,7 @@
             <!-- Tools Section -->
             <div class="control-section">
                 <div class="section-title">Tools</div>
-                <button class="control-btn" onclick="clearAll()">🗑️ Clear All</button>
-                
-                <div style="margin-top: 15px; padding: 12px; background: rgba(255,0,0,0.1); border: 1px solid rgba(255,0,0,0.3); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: #ff6666; text-align: center;">
-                        Danger Zone
-                    </div>
-                </div>
+                <button class="control-btn danger" onclick="clearAll()">🗑️ Clear All</button>
             </div>
         </div>
     </div>
@@ -713,8 +759,7 @@
             mute: false,
             spawnMass: 15,
             spawnColor: '#00d2ff',
-            showVelocityVectors: false,
-            showGravField: false
+            showVelocityVectors: false
         };
 
         let dragStart = { x: 0, y: 0 };
@@ -761,31 +806,38 @@
         function applyEdits() {
             if (selectedBodies.length === 0) return;
             
-            const mass = parseFloat(document.getElementById('edit-mass').value);
-            const vx = parseFloat(document.getElementById('edit-vx').value);
-            const vy = parseFloat(document.getElementById('edit-vy').value);
+            const mass = parseFloat(document.getElementById('edit-mass-slider').value);
+            const vx = parseFloat(document.getElementById('edit-vx-slider').value);
+            const vy = parseFloat(document.getElementById('edit-vy-slider').value);
             const color = document.getElementById('edit-color').value;
             
             for (let body of selectedBodies) {
-                if (!isNaN(mass)) {
-                    body.mass = mass;
-                    body.radius = Math.cbrt(mass) * 4;
-                }
-                if (!isNaN(vx)) body.vx = vx;
-                if (!isNaN(vy)) body.vy = vy;
-                if (color) body.color = color;
+                body.mass = mass;
+                body.radius = Math.cbrt(mass) * 4;
+                body.vx = vx;
+                body.vy = vy;
+                body.color = color;
             }
+            
+            updateEditPanel();
         }
 
         function updateEditPanel() {
             const editSection = document.getElementById('edit-section');
+            const selectedCount = document.getElementById('selected-count');
+            
             if (selectedBodies.length > 0) {
                 editSection.style.display = 'block';
+                selectedCount.textContent = selectedBodies.length;
+                
                 // Show values from first selected body
                 const body = selectedBodies[0];
-                document.getElementById('edit-mass').value = body.mass.toFixed(1);
-                document.getElementById('edit-vx').value = body.vx.toFixed(2);
-                document.getElementById('edit-vy').value = body.vy.toFixed(2);
+                document.getElementById('edit-mass-slider').value = body.mass;
+                document.getElementById('edit-mass-value').textContent = body.mass.toFixed(1);
+                document.getElementById('edit-vx-slider').value = body.vx;
+                document.getElementById('edit-vx-value').textContent = body.vx.toFixed(1);
+                document.getElementById('edit-vy-slider').value = body.vy;
+                document.getElementById('edit-vy-value').textContent = body.vy.toFixed(1);
                 document.getElementById('edit-color').value = body.color;
             } else {
                 editSection.style.display = 'none';
@@ -794,56 +846,58 @@
 
         // Sync controls with settings
         function initControls() {
-            const gravityInput = document.getElementById('gravity-input');
             const gravitySlider = document.getElementById('gravity-slider');
-            const speedInput = document.getElementById('speed-input');
+            const gravityValue = document.getElementById('gravity-value');
             const speedSlider = document.getElementById('speed-slider');
-            const massInput = document.getElementById('mass-input');
+            const speedValue = document.getElementById('speed-value');
             const massSlider = document.getElementById('mass-slider');
+            const massValue = document.getElementById('mass-value');
             const colorPicker = document.getElementById('color-picker');
             
-            // Set initial values
-            gravityInput.value = settings.G;
-            gravitySlider.value = settings.G;
-            speedInput.value = settings.iterationsPerFrame;
-            speedSlider.value = settings.iterationsPerFrame;
-            massInput.value = settings.spawnMass;
-            massSlider.value = settings.spawnMass;
-            colorPicker.value = settings.spawnColor;
+            // Edit panel sliders
+            const editMassSlider = document.getElementById('edit-mass-slider');
+            const editMassValue = document.getElementById('edit-mass-value');
+            const editVxSlider = document.getElementById('edit-vx-slider');
+            const editVxValue = document.getElementById('edit-vx-value');
+            const editVySlider = document.getElementById('edit-vy-slider');
+            const editVyValue = document.getElementById('edit-vy-value');
             
-            // Gravity sync
-            gravityInput.addEventListener('input', (e) => {
-                settings.G = parseFloat(e.target.value);
-                gravitySlider.value = settings.G;
-            });
+            // Gravity
             gravitySlider.addEventListener('input', (e) => {
                 settings.G = parseFloat(e.target.value);
-                gravityInput.value = settings.G;
+                gravityValue.textContent = settings.G.toFixed(1);
             });
             
-            // Speed (iterations) sync
-            speedInput.addEventListener('input', (e) => {
-                settings.iterationsPerFrame = parseInt(e.target.value);
-                speedSlider.value = settings.iterationsPerFrame;
-            });
+            // Speed
             speedSlider.addEventListener('input', (e) => {
                 settings.iterationsPerFrame = parseInt(e.target.value);
-                speedInput.value = settings.iterationsPerFrame;
+                speedValue.textContent = settings.iterationsPerFrame;
             });
             
-            // Mass sync
-            massInput.addEventListener('input', (e) => {
-                settings.spawnMass = parseFloat(e.target.value);
-                massSlider.value = settings.spawnMass;
-            });
+            // Mass
             massSlider.addEventListener('input', (e) => {
                 settings.spawnMass = parseFloat(e.target.value);
-                massInput.value = settings.spawnMass;
+                massValue.textContent = settings.spawnMass;
             });
             
             // Color
             colorPicker.addEventListener('input', (e) => {
                 settings.spawnColor = e.target.value;
+            });
+            
+            // Edit mass slider
+            editMassSlider.addEventListener('input', (e) => {
+                editMassValue.textContent = parseFloat(e.target.value).toFixed(1);
+            });
+            
+            // Edit vx slider
+            editVxSlider.addEventListener('input', (e) => {
+                editVxValue.textContent = parseFloat(e.target.value).toFixed(1);
+            });
+            
+            // Edit vy slider
+            editVySlider.addEventListener('input', (e) => {
+                editVyValue.textContent = parseFloat(e.target.value).toFixed(1);
             });
             
             // Checkboxes
@@ -875,9 +929,6 @@
             });
             document.getElementById('velocity-vectors-check').addEventListener('change', (e) => {
                 settings.showVelocityVectors = e.target.checked;
-            });
-            document.getElementById('grav-field-check').addEventListener('change', (e) => {
-                settings.showGravField = e.target.checked;
             });
         }
 
@@ -944,6 +995,39 @@
                 return { x: comX / totalMass, y: comY / totalMass };
             }
             return { x: 0, y: 0 };
+        }
+
+        // --- Calculate bounding box and appropriate zoom ---
+        function calculateAutoZoom() {
+            if (bodies.length === 0) return { zoom: 1 };
+            
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            
+            for (let body of bodies) {
+                // Include body radius in bounds
+                const r = body.radius;
+                minX = Math.min(minX, body.x - r);
+                maxX = Math.max(maxX, body.x + r);
+                minY = Math.min(minY, body.y - r);
+                maxY = Math.max(maxY, body.y + r);
+            }
+            
+            const boundWidth = maxX - minX;
+            const boundHeight = maxY - minY;
+            
+            // Add padding (40% on each side)
+            const padding = 1.4;
+            const neededWidth = boundWidth * padding;
+            const neededHeight = boundHeight * padding;
+            
+            // Calculate zoom to fit
+            const zoomX = width / neededWidth;
+            const zoomY = height / neededHeight;
+            const targetZoom = Math.min(zoomX, zoomY);
+            
+            // Clamp zoom
+            return { zoom: Math.min(Math.max(targetZoom, 0.05), 5) };
         }
 
         // --- Classes ---
@@ -1183,68 +1267,6 @@
             ctx.stroke();
         }
 
-        function drawGravitationalField() {
-            if (!settings.showGravField || bodies.length === 0) return;
-            
-            const gridSpacing = 80;
-            const tl = toWorld(0, 0);
-            const br = toWorld(width, height);
-            
-            for (let x = Math.floor(tl.x / gridSpacing) * gridSpacing; x < br.x; x += gridSpacing) {
-                for (let y = Math.floor(tl.y / gridSpacing) * gridSpacing; y < br.y; y += gridSpacing) {
-                    let fx = 0, fy = 0;
-                    
-                    // Calculate field at this point
-                    for (let body of bodies) {
-                        const dx = body.x - x;
-                        const dy = body.y - y;
-                        const distSq = dx * dx + dy * dy;
-                        const dist = Math.sqrt(distSq);
-                        
-                        if (dist > body.radius) {
-                            const force = (settings.G * body.mass) / distSq;
-                            fx += force * (dx / dist);
-                            fy += force * (dy / dist);
-                        }
-                    }
-                    
-                    const magnitude = Math.sqrt(fx * fx + fy * fy);
-                    if (magnitude > 0.001) {
-                        const s = toScreen(x, y);
-                        const scale = Math.min(gridSpacing * 0.4, magnitude * 10);
-                        const angle = Math.atan2(fy, fx);
-                        
-                        const ex = s.x + Math.cos(angle) * scale * camera.zoom;
-                        const ey = s.y + Math.sin(angle) * scale * camera.zoom;
-                        
-                        const alpha = Math.min(0.5, magnitude * 0.1);
-                        ctx.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(s.x, s.y);
-                        ctx.lineTo(ex, ey);
-                        ctx.stroke();
-                        
-                        // Arrow head
-                        const arrowSize = 4 * camera.zoom;
-                        ctx.fillStyle = `rgba(100, 200, 255, ${alpha})`;
-                        ctx.beginPath();
-                        ctx.moveTo(ex, ey);
-                        ctx.lineTo(
-                            ex - arrowSize * Math.cos(angle - Math.PI/6),
-                            ey - arrowSize * Math.sin(angle - Math.PI/6)
-                        );
-                        ctx.lineTo(
-                            ex - arrowSize * Math.cos(angle + Math.PI/6),
-                            ey - arrowSize * Math.sin(angle + Math.PI/6)
-                        );
-                        ctx.closePath();
-                        ctx.fill();
-                    }
-                }
-            }
-        }
-
         // --- Presets ---
         function loadSolarSystem() {
             bodies = []; selectedBodies = []; settings.G = 0.5;
@@ -1324,8 +1346,8 @@
         }
 
         function updateControls() {
-            document.getElementById('gravity-input').value = settings.G;
             document.getElementById('gravity-slider').value = settings.G;
+            document.getElementById('gravity-value').textContent = settings.G.toFixed(1);
         }
 
         // --- Inputs ---
@@ -1510,6 +1532,10 @@
                 const com = calculateCoM();
                 camera.tx = com.x;
                 camera.ty = com.y;
+                
+                // Auto-zoom to fit all bodies
+                const autoZoom = calculateAutoZoom();
+                camera.tzoom = autoZoom.zoom;
             }
         }
 
@@ -1541,7 +1567,6 @@
             
             for(let s of stars) s.draw();
             drawGrid();
-            drawGravitationalField();
             for(let b of bodies) b.draw();
             for(let p of particles) p.draw();
             drawSlingshot();
