@@ -577,6 +577,24 @@
             font-size: 0.75rem;
             color: var(--accent);
             font-weight: 600;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            width: 60px;
+            text-align: center;
+            font-family: var(--font-main);
+            transition: all 0.2s;
+        }
+
+        .slider-value:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255,255,255,0.12);
+        }
+
+        .slider-value:hover {
+            border-color: rgba(0, 210, 255, 0.5);
         }
 
         /* Edit panel enhancements */
@@ -693,7 +711,7 @@
                 <div class="slider-container">
                     <div class="slider-header">
                         <span class="control-label" data-i18n="gravity">Gravity</span>
-                        <span class="slider-value" id="gravity-value">0.5</span>
+                        <input type="number" class="slider-value" id="gravity-value" value="0.5" min="0.1" max="2" step="0.1">
                     </div>
                     <input type="range" id="gravity-slider" min="0.1" max="2" step="0.1" value="0.5">
                 </div>
@@ -701,7 +719,7 @@
                 <div class="slider-container">
                     <div class="slider-header">
                         <span class="control-label" data-i18n="simSpeed">Sim Speed</span>
-                        <span class="slider-value" id="speed-value">10</span>
+                        <input type="number" class="slider-value" id="speed-value" value="10" min="1" max="50" step="1">
                     </div>
                     <input type="range" id="speed-slider" min="1" max="50" step="1" value="10">
                 </div>
@@ -723,7 +741,7 @@
                 <div class="slider-container">
                     <div class="slider-header">
                         <span class="control-label" data-i18n="mass">Mass</span>
-                        <span class="slider-value" id="mass-value">15</span>
+                        <input type="number" class="slider-value" id="mass-value" value="15" min="1" max="100" step="1">
                     </div>
                     <input type="range" id="mass-slider" min="1" max="100" step="1" value="15">
                 </div>
@@ -753,7 +771,7 @@
                     <div class="slider-container">
                         <div class="slider-header">
                             <span class="control-label" data-i18n="mass">Mass</span>
-                            <span class="slider-value" id="edit-mass-value">15</span>
+                            <input type="number" class="slider-value" id="edit-mass-value" value="15" min="1" max="200" step="1">
                         </div>
                         <input type="range" id="edit-mass-slider" min="1" max="200" step="1" value="15">
                     </div>
@@ -764,14 +782,14 @@
                     <div class="slider-container">
                         <div class="slider-header">
                             <span class="control-label" data-i18n="velocityX">Velocity X</span>
-                            <span class="slider-value" id="edit-vx-value">0.0</span>
+                            <input type="number" class="slider-value" id="edit-vx-value" value="0.0" min="-10" max="10" step="0.1">
                         </div>
                         <input type="range" id="edit-vx-slider" min="-10" max="10" step="0.1" value="0">
                     </div>
                     <div class="slider-container">
                         <div class="slider-header">
                             <span class="control-label" data-i18n="velocityY">Velocity Y</span>
-                            <span class="slider-value" id="edit-vy-value">0.0</span>
+                            <input type="number" class="slider-value" id="edit-vy-value" value="0.0" min="-10" max="10" step="0.1">
                         </div>
                         <input type="range" id="edit-vy-slider" min="-10" max="10" step="0.1" value="0">
                     </div>
@@ -1181,11 +1199,11 @@
                 // Show values from first selected body
                 const body = selectedBodies[0];
                 document.getElementById('edit-mass-slider').value = body.mass;
-                document.getElementById('edit-mass-value').textContent = body.mass.toFixed(1);
+                document.getElementById('edit-mass-value').value = body.mass.toFixed(1);
                 document.getElementById('edit-vx-slider').value = body.vx;
-                document.getElementById('edit-vx-value').textContent = body.vx.toFixed(1);
+                document.getElementById('edit-vx-value').value = body.vx.toFixed(1);
                 document.getElementById('edit-vy-slider').value = body.vy;
-                document.getElementById('edit-vy-value').textContent = body.vy.toFixed(1);
+                document.getElementById('edit-vy-value').value = body.vy.toFixed(1);
                 document.getElementById('edit-color').value = body.color;
             } else {
                 editSection.style.display = 'none';
@@ -1210,22 +1228,52 @@
             const editVySlider = document.getElementById('edit-vy-slider');
             const editVyValue = document.getElementById('edit-vy-value');
             
-            // Gravity
+            // Gravity - slider to input
             gravitySlider.addEventListener('input', (e) => {
-                settings.G = parseFloat(e.target.value);
-                gravityValue.textContent = settings.G.toFixed(1);
+                const val = parseFloat(e.target.value);
+                settings.G = val;
+                gravityValue.value = val.toFixed(1);
             });
             
-            // Speed
+            // Gravity - input to slider
+            gravityValue.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                if (isNaN(val)) return;
+                val = Math.max(0.1, Math.min(2, val));
+                settings.G = val;
+                gravitySlider.value = val;
+            });
+            
+            // Speed - slider to input
             speedSlider.addEventListener('input', (e) => {
-                settings.iterationsPerFrame = parseInt(e.target.value);
-                speedValue.textContent = settings.iterationsPerFrame;
+                const val = parseInt(e.target.value);
+                settings.iterationsPerFrame = val;
+                speedValue.value = val;
             });
             
-            // Mass
+            // Speed - input to slider
+            speedValue.addEventListener('input', (e) => {
+                let val = parseInt(e.target.value);
+                if (isNaN(val)) return;
+                val = Math.max(1, Math.min(50, val));
+                settings.iterationsPerFrame = val;
+                speedSlider.value = val;
+            });
+            
+            // Mass - slider to input
             massSlider.addEventListener('input', (e) => {
-                settings.spawnMass = parseFloat(e.target.value);
-                massValue.textContent = settings.spawnMass;
+                const val = parseFloat(e.target.value);
+                settings.spawnMass = val;
+                massValue.value = val;
+            });
+            
+            // Mass - input to slider
+            massValue.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                if (isNaN(val)) return;
+                val = Math.max(1, Math.min(100, val));
+                settings.spawnMass = val;
+                massSlider.value = val;
             });
             
             // Color
@@ -1233,19 +1281,43 @@
                 settings.spawnColor = e.target.value;
             });
             
-            // Edit mass slider
+            // Edit mass - slider to input
             editMassSlider.addEventListener('input', (e) => {
-                editMassValue.textContent = parseFloat(e.target.value).toFixed(1);
+                editMassValue.value = parseFloat(e.target.value).toFixed(1);
             });
             
-            // Edit vx slider
+            // Edit mass - input to slider
+            editMassValue.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                if (isNaN(val)) return;
+                val = Math.max(1, Math.min(200, val));
+                editMassSlider.value = val;
+            });
+            
+            // Edit vx - slider to input
             editVxSlider.addEventListener('input', (e) => {
-                editVxValue.textContent = parseFloat(e.target.value).toFixed(1);
+                editVxValue.value = parseFloat(e.target.value).toFixed(1);
             });
             
-            // Edit vy slider
+            // Edit vx - input to slider
+            editVxValue.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                if (isNaN(val)) return;
+                val = Math.max(-10, Math.min(10, val));
+                editVxSlider.value = val;
+            });
+            
+            // Edit vy - slider to input
             editVySlider.addEventListener('input', (e) => {
-                editVyValue.textContent = parseFloat(e.target.value).toFixed(1);
+                editVyValue.value = parseFloat(e.target.value).toFixed(1);
+            });
+            
+            // Edit vy - input to slider
+            editVyValue.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                if (isNaN(val)) return;
+                val = Math.max(-10, Math.min(10, val));
+                editVySlider.value = val;
             });
             
             // Checkboxes
@@ -1695,7 +1767,7 @@
 
         function updateControls() {
             document.getElementById('gravity-slider').value = settings.G;
-            document.getElementById('gravity-value').textContent = settings.G.toFixed(1);
+            document.getElementById('gravity-value').value = settings.G.toFixed(1);
         }
 
         // --- Inputs ---
