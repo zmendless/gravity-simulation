@@ -434,19 +434,182 @@
             font-weight: 600;
         }
 
+        /* Mobile floating button */
+        #mobile-menu-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            color: var(--accent);
+            font-size: 1.5rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 300;
+            transition: all 0.3s;
+        }
+
+        #mobile-menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        #mobile-menu-btn.open {
+            background: rgba(0, 210, 255, 0.2);
+        }
+
+        /* Touch overlay */
+        #touch-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .touch-indicator {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border: 3px solid var(--accent);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            transform: translate(-50%, -50%);
+        }
+
+        .touch-indicator.active {
+            opacity: 0.6;
+            animation: touch-pulse 0.5s ease-out;
+        }
+
+        @keyframes touch-pulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Mobile instruction overlay */
+        #mobile-instructions {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-glass);
+            color: var(--text-main);
+            font-size: 0.85rem;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 250;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 80%;
+            text-align: center;
+        }
+
+        #mobile-instructions.visible {
+            opacity: 1;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             #side-panel {
-                width: 280px;
+                width: 100%;
+                transform: translateY(100%);
+            }
+
+            #side-panel.minimized {
+                transform: translateY(100%);
+            }
+
+            #side-panel:not(.minimized) {
+                transform: translateY(0);
+            }
+
+            #minimize-tab {
+                display: none;
             }
             
             #stats-panel, #energy-panel {
-                width: 160px;
-                padding: 15px;
+                width: 140px;
+                padding: 12px;
+                font-size: 12px;
+            }
+
+            .panel-header {
+                font-size: 0.8rem;
+                margin-bottom: 10px;
+            }
+
+            .stat-row {
+                margin-bottom: 6px;
             }
             
             .control-section {
                 padding: 15px;
+            }
+
+            #mobile-menu-btn {
+                display: flex;
+            }
+
+            #touch-overlay {
+                display: block;
+            }
+
+            .keyboard-hints {
+                display: none;
+            }
+
+            /* Make sliders easier to use on mobile */
+            input[type="range"]::-webkit-slider-thumb {
+                width: 20px;
+                height: 20px;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #stats-panel {
+                top: 10px;
+                left: 10px;
+                width: 120px;
+                padding: 10px;
+                font-size: 11px;
+            }
+
+            #energy-panel {
+                bottom: 10px;
+                left: 10px;
+                width: 120px;
+                padding: 10px;
+                font-size: 11px;
+            }
+
+            #mobile-menu-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+                bottom: 15px;
+                right: 15px;
             }
         }
     </style>
@@ -480,7 +643,7 @@
                 <span>⚙</span>
                 <span>Controls</span>
             </div>
-            <button id="minimize-btn" onclick="event.stopPropagation(); togglePanel();">Hide</button>
+            <button id="minimize-btn" onclick="event.stopPropagation(); isMobile ? toggleMobileMenu() : togglePanel();">Hide</button>
         </div>
         
         <div id="panel-content">
@@ -643,6 +806,18 @@
         </div>
     </div>
 
+    <!-- Mobile Controls -->
+    <button id="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+    
+    <div id="touch-overlay">
+        <div class="touch-indicator" id="touch-indicator-1"></div>
+        <div class="touch-indicator" id="touch-indicator-2"></div>
+    </div>
+
+    <div id="mobile-instructions">
+        <span>📱 Tap: Select | 2-Finger Drag: Pan | Pinch: Zoom | Long Press: Create</span>
+    </div>
+
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -769,12 +944,46 @@
         let currMouse = { x: 0, y: 0 };
         let ctrlPressed = false;
 
+        // Mobile/Touch support variables
+        let touches = [];
+        let lastTouchDistance = 0;
+        let lastTouchCenter = { x: 0, y: 0 };
+        let longPressTimer = null;
+        let longPressActive = false;
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        let lastTapTime = 0;
+
+        // Show mobile instructions on load for mobile devices
+        if (isMobile) {
+            setTimeout(() => {
+                const instructions = document.getElementById('mobile-instructions');
+                instructions.style.display = 'flex';
+                setTimeout(() => instructions.classList.add('visible'), 100);
+                setTimeout(() => {
+                    instructions.classList.remove('visible');
+                    setTimeout(() => instructions.style.display = 'none', 300);
+                }, 5000);
+            }, 1000);
+        }
+
         // --- UI Control Functions ---
         function togglePanel() {
             const panel = document.getElementById('side-panel');
             panel.classList.toggle('minimized');
             const btn = document.getElementById('minimize-btn');
             btn.textContent = panel.classList.contains('minimized') ? 'Show' : 'Hide';
+        }
+
+        function toggleMobileMenu() {
+            const panel = document.getElementById('side-panel');
+            const btn = document.getElementById('mobile-menu-btn');
+            panel.classList.toggle('minimized');
+            btn.classList.toggle('open');
+            btn.textContent = panel.classList.contains('minimized') ? '☰' : '✕';
+            
+            // Update minimize button text
+            const minBtn = document.getElementById('minimize-btn');
+            minBtn.textContent = panel.classList.contains('minimized') ? 'Show' : 'Hide';
         }
 
         function clearAll() {
@@ -1456,6 +1665,197 @@
             camera.ty = mouseWorld.y - (e.clientY - height/2) / camera.tzoom;
         }, { passive: false });
 
+        // --- Touch Event Handlers ---
+        function getTouchCenter(touchList) {
+            let x = 0, y = 0;
+            for (let i = 0; i < touchList.length; i++) {
+                x += touchList[i].clientX;
+                y += touchList[i].clientY;
+            }
+            return { x: x / touchList.length, y: y / touchList.length };
+        }
+
+        function getTouchDistance(touch1, touch2) {
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function showTouchIndicator(x, y, index) {
+            const indicator = document.getElementById(`touch-indicator-${index}`);
+            if (indicator) {
+                indicator.style.left = x + 'px';
+                indicator.style.top = y + 'px';
+                indicator.classList.add('active');
+                setTimeout(() => indicator.classList.remove('active'), 200);
+            }
+        }
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            resumeAudio();
+            
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 1) {
+                const touch = touches[0];
+                showTouchIndicator(touch.clientX, touch.clientY, 1);
+                
+                // Start long press timer for creating bodies
+                longPressActive = false;
+                longPressTimer = setTimeout(() => {
+                    longPressActive = true;
+                    isSlingshotting = true;
+                    slingStart = { x: touch.clientX, y: touch.clientY };
+                    navigator.vibrate && navigator.vibrate(50);
+                }, 500);
+                
+                // Check for double tap
+                const now = Date.now();
+                if (now - lastTapTime < 300) {
+                    // Double tap - select/deselect body
+                    const mouseWorld = toWorld(touch.clientX, touch.clientY);
+                    let clickedBody = null;
+                    for(let b of bodies) {
+                        const dx = b.x - mouseWorld.x;
+                        const dy = b.y - mouseWorld.y;
+                        if (Math.sqrt(dx*dx + dy*dy) < b.radius + 20/camera.zoom) {
+                            clickedBody = b;
+                            break;
+                        }
+                    }
+                    if (clickedBody) {
+                        const idx = selectedBodies.indexOf(clickedBody);
+                        if (idx === -1) {
+                            selectedBodies.push(clickedBody);
+                        } else {
+                            selectedBodies.splice(idx, 1);
+                        }
+                        updateEditPanel();
+                        Sounds.playTone(400, 'sine', 0.1, 0.05);
+                        navigator.vibrate && navigator.vibrate(30);
+                    }
+                }
+                lastTapTime = now;
+                
+            } else if (touches.length === 2) {
+                // Cancel long press if second finger added
+                clearTimeout(longPressTimer);
+                longPressActive = false;
+                isSlingshotting = false;
+                
+                // Two-finger pan/zoom
+                lastTouchCenter = getTouchCenter(touches);
+                lastTouchDistance = getTouchDistance(touches[0], touches[1]);
+                isDraggingCam = true;
+                
+                showTouchIndicator(touches[0].clientX, touches[0].clientY, 1);
+                showTouchIndicator(touches[1].clientX, touches[1].clientY, 2);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 1 && isSlingshotting) {
+                // Update slingshot line
+                currMouse = { x: touches[0].clientX, y: touches[0].clientY };
+            } else if (touches.length === 2) {
+                const newCenter = getTouchCenter(touches);
+                const newDistance = getTouchDistance(touches[0], touches[1]);
+                
+                // Pan
+                const dx = newCenter.x - lastTouchCenter.x;
+                const dy = newCenter.y - lastTouchCenter.y;
+                camera.tx -= dx / camera.zoom;
+                camera.ty -= dy / camera.zoom;
+                
+                // Zoom (pinch)
+                const zoomFactor = newDistance / lastTouchDistance;
+                const newZoom = Math.min(Math.max(camera.tzoom * zoomFactor, 0.05), 5);
+                
+                const mouseWorld = toWorldTarget(newCenter.x, newCenter.y);
+                camera.tzoom = newZoom;
+                camera.tx = mouseWorld.x - (newCenter.x - width/2) / camera.tzoom;
+                camera.ty = mouseWorld.y - (newCenter.y - height/2) / camera.tzoom;
+                
+                lastTouchCenter = newCenter;
+                lastTouchDistance = newDistance;
+                
+                settings.followSelected = false;
+                settings.followCoM = false;
+                document.getElementById('follow-check').checked = false;
+                document.getElementById('follow-com-check').checked = false;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            
+            // Clear long press timer
+            clearTimeout(longPressTimer);
+            
+            if (isSlingshotting && longPressActive) {
+                // Create body from long press
+                const touch = touches[0];
+                const dx = slingStart.x - touch.clientX;
+                const dy = slingStart.y - touch.clientY;
+                const worldPos = toWorld(slingStart.x, slingStart.y);
+                const power = 0.05;
+                const newB = new Body(worldPos.x, worldPos.y, dx*power, dy*power, settings.spawnMass, settings.spawnColor);
+                bodies.push(newB);
+                selectedBodies = [newB];
+                updateEditPanel();
+                Sounds.shoot();
+                navigator.vibrate && navigator.vibrate(50);
+            } else if (touches.length === 1 && !longPressActive && e.touches.length === 0) {
+                // Single tap - select body
+                const touch = touches[0];
+                const mouseWorld = toWorld(touch.clientX, touch.clientY);
+                let clickedBody = null;
+                for(let b of bodies) {
+                    const dx = b.x - mouseWorld.x;
+                    const dy = b.y - mouseWorld.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < b.radius + 20/camera.zoom) {
+                        clickedBody = b;
+                        break;
+                    }
+                }
+                if (clickedBody) {
+                    selectedBodies = [clickedBody];
+                    updateEditPanel();
+                    Sounds.playTone(400, 'sine', 0.1, 0.05);
+                    navigator.vibrate && navigator.vibrate(30);
+                } else {
+                    selectedBodies = [];
+                    updateEditPanel();
+                }
+            }
+            
+            isSlingshotting = false;
+            isDraggingCam = false;
+            longPressActive = false;
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 0) {
+                lastTouchDistance = 0;
+            } else if (touches.length === 2) {
+                lastTouchCenter = getTouchCenter(touches);
+                lastTouchDistance = getTouchDistance(touches[0], touches[1]);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchcancel', e => {
+            e.preventDefault();
+            clearTimeout(longPressTimer);
+            isSlingshotting = false;
+            isDraggingCam = false;
+            longPressActive = false;
+            touches = [];
+        }, { passive: false });
+
         function drawGrid() {
             if(!settings.showGrid) return;
             const GRID = 100;
@@ -1575,6 +1975,13 @@
         loadSolarSystem();
         initControls();
         initStars();
+        
+        // Start with panel minimized on mobile
+        if (isMobile) {
+            document.getElementById('side-panel').classList.add('minimized');
+            document.getElementById('mobile-menu-btn').textContent = '☰';
+        }
+        
         animate();
 
     </script>
