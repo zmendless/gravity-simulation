@@ -630,7 +630,7 @@
             timeScale: 0.1,
             paused: false,
             collisions: true,
-            trailLength: 50,
+            trailLength: 100,
             showGrid: true,
             followSelected: false,
             mute: false,
@@ -832,7 +832,7 @@
                 this.x += this.vx * settings.timeScale;
                 this.y += this.vy * settings.timeScale;
 
-                if (settings.trailLength > 0 && Math.random() > 0.6) {
+                if (settings.trailLength > 0 && Math.random() > 0.9) {
                     this.history.push({x: this.x, y: this.y});
                     if (this.history.length > settings.trailLength) this.history.shift();
                 }
@@ -1166,4 +1166,5 @@ if (this.history.length > 1) {
     </script>
 </body>
 </html>
+
 
