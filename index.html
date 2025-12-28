@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orbit Sim: Ultimate Edition 3.0</title>
+    <title>Gravity Simulation</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -436,10 +436,10 @@
                 
                 <div class="control-item" style="margin-top: 15px;">
                     <span class="control-label">Time Scale</span>
-                    <input type="number" class="control-input" id="timescale-input" step="0.1" min="0" max="3">
+                    <input type="number" class="control-input" id="timescale-input" step="0.01" min="0.01" max="3">
                 </div>
                 <div class="slider-container">
-                    <input type="range" id="timescale-slider" min="0" max="3" step="0.1">
+                    <input type="range" id="timescale-slider" min="0.01" max="3" step="0.01">
                 </div>
 
                 <div class="control-item" style="margin-top: 15px;">
@@ -627,7 +627,7 @@
         
         const settings = {
             G: 0.5,
-            timeScale: 1.0,
+            timeScale: 0.1,
             paused: false,
             collisions: true,
             trailLength: 50,
@@ -1166,3 +1166,4 @@ if (this.history.length > 1) {
     </script>
 </body>
 </html>
+
