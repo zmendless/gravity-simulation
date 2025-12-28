@@ -435,11 +435,11 @@
                 </div>
                 
                 <div class="control-item" style="margin-top: 15px;">
-                    <span class="control-label">Time Scale</span>
-                    <input type="number" class="control-input" id="timescale-input" step="0.01" min="0.01" max="3">
+                    <span class="control-label">Sim Speed</span>
+                    <input type="number" class="control-input" id="speed-input" step="1" min="1" max="50">
                 </div>
                 <div class="slider-container">
-                    <input type="range" id="timescale-slider" min="0.01" max="3" step="0.01">
+                    <input type="range" id="speed-slider" min="1" max="50" step="1">
                 </div>
 
                 <div class="control-item" style="margin-top: 15px;">
@@ -627,7 +627,8 @@
         
         const settings = {
             G: 0.5,
-            timeScale: 0.1,
+            timeScale: 0.1, // Constant time factor
+            iterationsPerFrame: 10, // How many times to call update per frame
             paused: false,
             collisions: true,
             trailLength: 100,
@@ -670,8 +671,8 @@
         function initControls() {
             const gravityInput = document.getElementById('gravity-input');
             const gravitySlider = document.getElementById('gravity-slider');
-            const timescaleInput = document.getElementById('timescale-input');
-            const timescaleSlider = document.getElementById('timescale-slider');
+            const speedInput = document.getElementById('speed-input');
+            const speedSlider = document.getElementById('speed-slider');
             const massInput = document.getElementById('mass-input');
             const massSlider = document.getElementById('mass-slider');
             const colorPicker = document.getElementById('color-picker');
@@ -679,8 +680,8 @@
             // Set initial values
             gravityInput.value = settings.G;
             gravitySlider.value = settings.G;
-            timescaleInput.value = settings.timeScale;
-            timescaleSlider.value = settings.timeScale;
+            speedInput.value = settings.iterationsPerFrame;
+            speedSlider.value = settings.iterationsPerFrame;
             massInput.value = settings.spawnMass;
             massSlider.value = settings.spawnMass;
             colorPicker.value = settings.spawnColor;
@@ -695,14 +696,14 @@
                 gravityInput.value = settings.G;
             });
             
-            // Time scale sync
-            timescaleInput.addEventListener('input', (e) => {
-                settings.timeScale = parseFloat(e.target.value);
-                timescaleSlider.value = settings.timeScale;
+            // Speed (iterations) sync
+            speedInput.addEventListener('input', (e) => {
+                settings.iterationsPerFrame = parseInt(e.target.value);
+                speedSlider.value = settings.iterationsPerFrame;
             });
-            timescaleSlider.addEventListener('input', (e) => {
-                settings.timeScale = parseFloat(e.target.value);
-                timescaleInput.value = settings.timeScale;
+            speedSlider.addEventListener('input', (e) => {
+                settings.iterationsPerFrame = parseInt(e.target.value);
+                speedInput.value = settings.iterationsPerFrame;
             });
             
             // Mass sync
@@ -840,26 +841,25 @@
             draw() {
                 const s = toScreen(this.x, this.y);
                 const r = this.radius * camera.zoom;
-if (this.history.length > 1) {
-    ctx.strokeStyle = this.color;
-    ctx.lineWidth = Math.max(1, r * 0.2);
+                if (this.history.length > 1) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = Math.max(1, r * 0.2);
 
-    for (let i = 1; i < this.history.length; i++) {
-        const a = i / this.history.length; // 0 → 1
-        ctx.globalAlpha = a * 0.4;
+                    for (let i = 1; i < this.history.length; i++) {
+                        const a = i / this.history.length; // 0 → 1
+                        ctx.globalAlpha = a * 0.4;
 
-        const p0 = toScreen(this.history[i - 1].x, this.history[i - 1].y);
-        const p1 = toScreen(this.history[i].x, this.history[i].y);
+                        const p0 = toScreen(this.history[i - 1].x, this.history[i - 1].y);
+                        const p1 = toScreen(this.history[i].x, this.history[i].y);
 
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
-    }
+                        ctx.beginPath();
+                        ctx.moveTo(p0.x, p0.y);
+                        ctx.lineTo(p1.x, p1.y);
+                        ctx.stroke();
+                    }
 
-    ctx.globalAlpha = 1.0;
-}
-
+                    ctx.globalAlpha = 1.0;
+                }
 
                 if (this === selectedBody) {
                     ctx.beginPath();
@@ -1137,14 +1137,15 @@ if (this.history.length > 1) {
             camera.y = lerp(camera.y, camera.ty, 0.1);
             camera.zoom = lerp(camera.zoom, camera.tzoom, 0.1);
 
-            for(let i = 0; i < 10; i++) {
-            checkCollisions();
-            for(let b of bodies) b.update();
-            for(let i=particles.length-1; i>=0; i--) {
-                particles[i].update();
-                if(particles[i].life <= 0) particles.splice(i, 1);
+            // Run physics iterations based on settings.iterationsPerFrame
+            for(let i = 0; i < settings.iterationsPerFrame; i++) {
+                checkCollisions();
+                for(let b of bodies) b.update();
+                for(let i=particles.length-1; i>=0; i--) {
+                    particles[i].update();
+                    if(particles[i].life <= 0) particles.splice(i, 1);
+                }
             }
-        }
 
             updateStats();
 
@@ -1166,5 +1167,3 @@ if (this.history.length > 1) {
     </script>
 </body>
 </html>
-
-
