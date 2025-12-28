@@ -597,6 +597,18 @@
             border-color: rgba(0, 210, 255, 0.5);
         }
 
+        /* Remove spinner buttons from number inputs */
+        .slider-value::-webkit-inner-spin-button,
+        .slider-value::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .slider-value[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
         /* Edit panel enhancements */
         .edit-control-group {
             background: rgba(255,255,255,0.03);
