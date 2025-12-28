@@ -31,13 +31,136 @@
         }
         canvas { display: block; }
         
-        /* Language Selector */
+        /* Language Selection Modal */
+        #lang-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 8, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+
+        #lang-modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .lang-modal-content {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 40px 50px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            animation: modalSlideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .lang-modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .lang-modal-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .lang-modal-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .lang-modal-btn {
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.15);
+            color: var(--text-main);
+            padding: 15px 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-family: var(--font-main);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lang-modal-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(0, 210, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.4s, height 0.4s;
+        }
+
+        .lang-modal-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .lang-modal-btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+
+        .lang-modal-btn span {
+            position: relative;
+            z-index: 1;
+            display: block;
+        }
+
+        .lang-modal-btn .lang-name {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .lang-modal-btn .lang-native {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        /* Language Selector (hidden after initial selection) */
         #lang-selector {
             position: absolute;
             top: 20px;
             right: 360px;
             z-index: 300;
-            display: flex;
+            display: none;
             gap: 8px;
             background: var(--bg-glass);
             padding: 8px;
@@ -489,17 +612,47 @@
                 padding: 15px;
             }
             
-            #lang-selector {
-                right: 300px;
+            .lang-modal-content {
+                padding: 30px 35px;
+            }
+
+            .lang-modal-buttons {
+                flex-direction: column;
+            }
+
+            .lang-modal-btn {
+                padding: 12px 30px;
             }
         }
     </style>
 </head>
 <body>
 
+    <!-- Language Selection Modal -->
+    <div id="lang-modal">
+        <div class="lang-modal-content">
+            <div class="lang-modal-title">Choose Your Language</div>
+            <div class="lang-modal-subtitle">Dilinizi Seçin</div>
+            <div class="lang-modal-buttons">
+                <button class="lang-modal-btn" onclick="selectLanguageAndStart('en')">
+                    <span>
+                        <div class="lang-name">English</div>
+                        <div class="lang-native">English</div>
+                    </span>
+                </button>
+                <button class="lang-modal-btn" onclick="selectLanguageAndStart('tr')">
+                    <span>
+                        <div class="lang-name">Turkish</div>
+                        <div class="lang-native">Türkçe</div>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <canvas id="canvas"></canvas>
 
-    <!-- Language Selector -->
+    <!-- Language Selector (hidden by default, can be shown if needed) -->
     <div id="lang-selector">
         <button class="lang-btn active" onclick="setLanguage('en')" id="lang-en">EN</button>
         <button class="lang-btn" onclick="setLanguage('tr')" id="lang-tr">TR</button>
@@ -805,6 +958,16 @@
         };
 
         let currentLanguage = 'en';
+
+        function selectLanguageAndStart(lang) {
+            setLanguage(lang);
+            const modal = document.getElementById('lang-modal');
+            modal.classList.add('hidden');
+            // Remove modal from DOM after animation
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
 
         function setLanguage(lang) {
             currentLanguage = lang;
