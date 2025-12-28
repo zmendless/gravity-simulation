@@ -31,6 +31,46 @@
         }
         canvas { display: block; }
         
+        /* Language Selector */
+        #lang-selector {
+            position: absolute;
+            top: 20px;
+            right: 360px;
+            z-index: 300;
+            display: flex;
+            gap: 8px;
+            background: var(--bg-glass);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .lang-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: var(--font-main);
+        }
+
+        .lang-btn.active {
+            background: rgba(0, 210, 255, 0.3);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .lang-btn:hover {
+            background: rgba(0, 210, 255, 0.2);
+            border-color: var(--accent);
+        }
+
         /* --- Stats Panel (Top Left) --- */
         #stats-panel {
             position: absolute;
@@ -448,6 +488,10 @@
             .control-section {
                 padding: 15px;
             }
+            
+            #lang-selector {
+                right: 300px;
+            }
         }
     </style>
 </head>
@@ -455,41 +499,47 @@
 
     <canvas id="canvas"></canvas>
 
+    <!-- Language Selector -->
+    <div id="lang-selector">
+        <button class="lang-btn active" onclick="setLanguage('en')" id="lang-en">EN</button>
+        <button class="lang-btn" onclick="setLanguage('tr')" id="lang-tr">TR</button>
+    </div>
+
     <div id="stats-panel">
-        <div class="panel-header">Body Data</div>
-        <div class="stat-row"><span class="stat-label">Mass</span><span class="stat-val" id="st-mass">0</span></div>
-        <div class="stat-row"><span class="stat-label">Velocity</span><span class="stat-val" id="st-vel">0</span></div>
-        <div class="stat-row"><span class="stat-label">Pos X</span><span class="stat-val" id="st-x">0</span></div>
-        <div class="stat-row"><span class="stat-label">Pos Y</span><span class="stat-val" id="st-y">0</span></div>
-        <div class="stat-row"><span class="stat-label">KE</span><span class="stat-val" id="st-ke">0</span></div>
+        <div class="panel-header" data-i18n="bodyData">Body Data</div>
+        <div class="stat-row"><span class="stat-label" data-i18n="mass">Mass</span><span class="stat-val" id="st-mass">0</span></div>
+        <div class="stat-row"><span class="stat-label" data-i18n="velocity">Velocity</span><span class="stat-val" id="st-vel">0</span></div>
+        <div class="stat-row"><span class="stat-label" data-i18n="posX">Pos X</span><span class="stat-val" id="st-x">0</span></div>
+        <div class="stat-row"><span class="stat-label" data-i18n="posY">Pos Y</span><span class="stat-val" id="st-y">0</span></div>
+        <div class="stat-row"><span class="stat-label" data-i18n="kineticEnergy">KE</span><span class="stat-val" id="st-ke">0</span></div>
     </div>
 
     <div id="energy-panel">
-        <div class="panel-header">System Energy</div>
-        <div class="stat-row"><span class="stat-label">Bodies</span><span class="stat-val" id="sys-count">0</span></div>
-        <div class="stat-row"><span class="stat-label">Total KE</span><span class="stat-val" id="sys-ke">0</span></div>
-        <div class="stat-row"><span class="stat-label">Total PE</span><span class="stat-val" id="sys-pe">0</span></div>
-        <div class="stat-row"><span class="stat-label">Total E</span><span class="stat-val" id="sys-te">0</span></div>
+        <div class="panel-header" data-i18n="systemEnergy">System Energy</div>
+        <div class="stat-row"><span class="stat-label" data-i18n="bodies">Bodies</span><span class="stat-val" id="sys-count">0</span></div>
+        <div class="stat-row"><span class="stat-label" data-i18n="totalKE">Total KE</span><span class="stat-val" id="sys-ke">0</span></div>
+        <div class="stat-row"><span class="stat-label" data-i18n="totalPE">Total PE</span><span class="stat-val" id="sys-pe">0</span></div>
+        <div class="stat-row"><span class="stat-label" data-i18n="totalE">Total E</span><span class="stat-val" id="sys-te">0</span></div>
     </div>
 
     <div id="side-panel">
-        <div id="minimize-tab" onclick="event.stopPropagation(); togglePanel();">Controls</div>
+        <div id="minimize-tab" onclick="event.stopPropagation(); togglePanel();" data-i18n="controls">Controls</div>
         
         <div id="panel-header">
             <div id="panel-title">
                 <span>⚙</span>
-                <span>Controls</span>
+                <span data-i18n="controls">Controls</span>
             </div>
-            <button id="minimize-btn" onclick="event.stopPropagation(); togglePanel();">Hide</button>
+            <button id="minimize-btn" onclick="event.stopPropagation(); togglePanel();" data-i18n="hide">Hide</button>
         </div>
         
         <div id="panel-content">
             <!-- Physics Section -->
             <div class="control-section">
-                <div class="section-title">Physics</div>
+                <div class="section-title" data-i18n="physics">Physics</div>
                 <div class="slider-container">
                     <div class="slider-header">
-                        <span class="control-label">Gravity</span>
+                        <span class="control-label" data-i18n="gravity">Gravity</span>
                         <span class="slider-value" id="gravity-value">0.5</span>
                     </div>
                     <input type="range" id="gravity-slider" min="0.1" max="2" step="0.1" value="0.5">
@@ -497,36 +547,36 @@
                 
                 <div class="slider-container">
                     <div class="slider-header">
-                        <span class="control-label">Sim Speed</span>
+                        <span class="control-label" data-i18n="simSpeed">Sim Speed</span>
                         <span class="slider-value" id="speed-value">10</span>
                     </div>
                     <input type="range" id="speed-slider" min="1" max="50" step="1" value="10">
                 </div>
 
                 <div class="control-item">
-                    <span class="control-label">Collisions</span>
+                    <span class="control-label" data-i18n="collisions">Collisions</span>
                     <input type="checkbox" class="control-checkbox" id="collisions-check" checked>
                 </div>
                 
                 <div class="control-item">
-                    <span class="control-label">Paused</span>
+                    <span class="control-label" data-i18n="paused">Paused</span>
                     <input type="checkbox" class="control-checkbox" id="paused-check">
                 </div>
             </div>
 
             <!-- Creation Section -->
             <div class="control-section">
-                <div class="section-title">Creation</div>
+                <div class="section-title" data-i18n="creation">Creation</div>
                 <div class="slider-container">
                     <div class="slider-header">
-                        <span class="control-label">Mass</span>
+                        <span class="control-label" data-i18n="mass">Mass</span>
                         <span class="slider-value" id="mass-value">15</span>
                     </div>
                     <input type="range" id="mass-slider" min="1" max="100" step="1" value="15">
                 </div>
 
                 <div class="control-item">
-                    <span class="control-label">Color</span>
+                    <span class="control-label" data-i18n="color">Color</span>
                     <div class="color-picker-wrapper">
                         <input type="color" class="control-color" id="color-picker" value="#00d2ff">
                     </div>
@@ -534,22 +584,22 @@
 
                 <div style="margin-top: 20px;">
                     <div class="keyboard-hints">
-                        <div class="key-hint"><span class="key">RMB</span> Drag to launch</div>
-                        <div class="key-hint"><span class="key">LMB</span> Select body</div>
-                        <div class="key-hint"><span class="key">Ctrl+LMB</span> Multi-select</div>
+                        <div class="key-hint"><span class="key">RMB</span> <span data-i18n="dragToLaunch">Drag to launch</span></div>
+                        <div class="key-hint"><span class="key">LMB</span> <span data-i18n="selectBody">Select body</span></div>
+                        <div class="key-hint"><span class="key">Ctrl+LMB</span> <span data-i18n="multiSelect">Multi-select</span></div>
                     </div>
                 </div>
             </div>
 
             <!-- Edit Section -->
             <div class="control-section" id="edit-section" style="display: none;">
-                <div class="section-title">Edit Selected (<span id="selected-count">0</span>)</div>
+                <div class="section-title"><span data-i18n="editSelected">Edit Selected</span> (<span id="selected-count">0</span>)</div>
                 
                 <div class="edit-control-group">
-                    <div class="edit-section-label">Physical Properties</div>
+                    <div class="edit-section-label" data-i18n="physicalProperties">Physical Properties</div>
                     <div class="slider-container">
                         <div class="slider-header">
-                            <span class="control-label">Mass</span>
+                            <span class="control-label" data-i18n="mass">Mass</span>
                             <span class="slider-value" id="edit-mass-value">15</span>
                         </div>
                         <input type="range" id="edit-mass-slider" min="1" max="200" step="1" value="15">
@@ -557,17 +607,17 @@
                 </div>
 
                 <div class="edit-control-group">
-                    <div class="edit-section-label">Velocity</div>
+                    <div class="edit-section-label" data-i18n="velocity">Velocity</div>
                     <div class="slider-container">
                         <div class="slider-header">
-                            <span class="control-label">Velocity X</span>
+                            <span class="control-label" data-i18n="velocityX">Velocity X</span>
                             <span class="slider-value" id="edit-vx-value">0.0</span>
                         </div>
                         <input type="range" id="edit-vx-slider" min="-10" max="10" step="0.1" value="0">
                     </div>
                     <div class="slider-container">
                         <div class="slider-header">
-                            <span class="control-label">Velocity Y</span>
+                            <span class="control-label" data-i18n="velocityY">Velocity Y</span>
                             <span class="slider-value" id="edit-vy-value">0.0</span>
                         </div>
                         <input type="range" id="edit-vy-slider" min="-10" max="10" step="0.1" value="0">
@@ -575,75 +625,209 @@
                 </div>
 
                 <div class="edit-control-group">
-                    <div class="edit-section-label">Appearance</div>
+                    <div class="edit-section-label" data-i18n="appearance">Appearance</div>
                     <div class="control-item">
-                        <span class="control-label">Color</span>
+                        <span class="control-label" data-i18n="color">Color</span>
                         <input type="color" class="control-color" id="edit-color">
                     </div>
                 </div>
 
-                <button class="control-btn" onclick="applyEdits()">✓ Apply Changes</button>
-                <button class="control-btn danger" onclick="deleteSelected()">🗑️ Delete Selected</button>
+                <button class="control-btn" onclick="applyEdits()"><span data-i18n="applyChanges">✓ Apply Changes</span></button>
+                <button class="control-btn danger" onclick="deleteSelected()"><span data-i18n="deleteSelected">🗑️ Delete Selected</span></button>
             </div>
 
             <!-- View Section -->
             <div class="control-section">
-                <div class="section-title">View</div>
+                <div class="section-title" data-i18n="view">View</div>
                 <div class="control-item">
-                    <span class="control-label">Show Grid</span>
+                    <span class="control-label" data-i18n="showGrid">Show Grid</span>
                     <input type="checkbox" class="control-checkbox" id="grid-check" checked>
                 </div>
                 
                 <div class="control-item">
-                    <span class="control-label">Track Selected</span>
+                    <span class="control-label" data-i18n="trackSelected">Track Selected</span>
                     <input type="checkbox" class="control-checkbox" id="follow-check">
                 </div>
 
                 <div class="control-item">
-                    <span class="control-label">Track CoM</span>
+                    <span class="control-label" data-i18n="trackCoM">Track CoM</span>
                     <input type="checkbox" class="control-checkbox" id="follow-com-check">
                 </div>
 
                 <div class="control-item">
-                    <span class="control-label">Velocity Vectors</span>
+                    <span class="control-label" data-i18n="velocityVectors">Velocity Vectors</span>
                     <input type="checkbox" class="control-checkbox" id="velocity-vectors-check">
                 </div>
 
                 <div class="control-item">
-                    <span class="control-label">Mute Audio</span>
+                    <span class="control-label" data-i18n="muteAudio">Mute Audio</span>
                     <input type="checkbox" class="control-checkbox" id="mute-check">
                 </div>
 
-                <button class="control-btn" onclick="resetCamera()">Reset Camera</button>
+                <button class="control-btn" onclick="resetCamera()"><span data-i18n="resetCamera">Reset Camera</span></button>
 
                 <div class="keyboard-hints" style="margin-top: 15px;">
-                    <div class="key-hint"><span class="key">Scroll</span> Zoom</div>
-                    <div class="key-hint"><span class="key">Space</span> Pause</div>
-                    <div class="key-hint"><span class="key">Del</span> Delete</div>
+                    <div class="key-hint"><span class="key">Scroll</span> <span data-i18n="zoom">Zoom</span></div>
+                    <div class="key-hint"><span class="key">Space</span> <span data-i18n="pause">Pause</span></div>
+                    <div class="key-hint"><span class="key">Del</span> <span data-i18n="delete">Delete</span></div>
                 </div>
             </div>
 
             <!-- Presets Section -->
             <div class="control-section">
-                <div class="section-title">Presets</div>
-                <button class="control-btn" onclick="loadSolarSystem()">☀️ Solar System</button>
-                <button class="control-btn" onclick="loadBinaryStar()">⭐ Binary Stars</button>
-                <button class="control-btn" onclick="loadGalaxy()">🌌 Galaxy</button>
-                <button class="control-btn" onclick="loadChaos()">💫 Chaos</button>
-                <button class="control-btn" onclick="loadFigureEight()">∞ Figure Eight</button>
-                <button class="control-btn" onclick="loadPlanetMoons()">🌍 Planet + Moons</button>
-                <button class="control-btn" onclick="loadDoublePendulum()">⚡ Double Binary</button>
+                <div class="section-title" data-i18n="presets">Presets</div>
+                <button class="control-btn" onclick="loadSolarSystem()"><span data-i18n="solarSystem">☀️ Solar System</span></button>
+                <button class="control-btn" onclick="loadBinaryStar()"><span data-i18n="binaryStars">⭐ Binary Stars</span></button>
+                <button class="control-btn" onclick="loadGalaxy()"><span data-i18n="galaxy">🌌 Galaxy</span></button>
+                <button class="control-btn" onclick="loadChaos()"><span data-i18n="chaos">💫 Chaos</span></button>
+                <button class="control-btn" onclick="loadFigureEight()"><span data-i18n="figureEight">∞ Figure Eight</span></button>
+                <button class="control-btn" onclick="loadPlanetMoons()"><span data-i18n="planetMoons">🌍 Planet + Moons</span></button>
+                <button class="control-btn" onclick="loadDoublePendulum()"><span data-i18n="doubleBinary">⚡ Double Binary</span></button>
             </div>
 
             <!-- Tools Section -->
             <div class="control-section">
-                <div class="section-title">Tools</div>
-                <button class="control-btn danger" onclick="clearAll()">🗑️ Clear All</button>
+                <div class="section-title" data-i18n="tools">Tools</div>
+                <button class="control-btn danger" onclick="clearAll()"><span data-i18n="clearAll">🗑️ Clear All</span></button>
             </div>
         </div>
     </div>
 
     <script>
+        // Translation object
+        const translations = {
+            en: {
+                bodyData: "Body Data",
+                mass: "Mass",
+                velocity: "Velocity",
+                posX: "Pos X",
+                posY: "Pos Y",
+                kineticEnergy: "KE",
+                systemEnergy: "System Energy",
+                bodies: "Bodies",
+                totalKE: "Total KE",
+                totalPE: "Total PE",
+                totalE: "Total E",
+                controls: "Controls",
+                hide: "Hide",
+                show: "Show",
+                physics: "Physics",
+                gravity: "Gravity",
+                simSpeed: "Sim Speed",
+                collisions: "Collisions",
+                paused: "Paused",
+                creation: "Creation",
+                color: "Color",
+                dragToLaunch: "Drag to launch",
+                selectBody: "Select body",
+                multiSelect: "Multi-select",
+                editSelected: "Edit Selected",
+                physicalProperties: "Physical Properties",
+                velocityX: "Velocity X",
+                velocityY: "Velocity Y",
+                appearance: "Appearance",
+                applyChanges: "✓ Apply Changes",
+                deleteSelected: "🗑️ Delete Selected",
+                view: "View",
+                showGrid: "Show Grid",
+                trackSelected: "Track Selected",
+                trackCoM: "Track CoM",
+                velocityVectors: "Velocity Vectors",
+                muteAudio: "Mute Audio",
+                resetCamera: "Reset Camera",
+                zoom: "Zoom",
+                pause: "Pause",
+                delete: "Delete",
+                presets: "Presets",
+                solarSystem: "☀️ Solar System",
+                binaryStars: "⭐ Binary Stars",
+                galaxy: "🌌 Galaxy",
+                chaos: "💫 Chaos",
+                figureEight: "∞ Figure Eight",
+                planetMoons: "🌍 Planet + Moons",
+                doubleBinary: "⚡ Double Binary",
+                tools: "Tools",
+                clearAll: "🗑️ Clear All"
+            },
+            tr: {
+                bodyData: "Cisim Verileri",
+                mass: "Kütle",
+                velocity: "Hız",
+                posX: "Konum X",
+                posY: "Konum Y",
+                kineticEnergy: "KE",
+                systemEnergy: "Sistem Enerjisi",
+                bodies: "Cisimler",
+                totalKE: "Toplam KE",
+                totalPE: "Toplam PE",
+                totalE: "Toplam E",
+                controls: "Kontroller",
+                hide: "Gizle",
+                show: "Göster",
+                physics: "Fizik",
+                gravity: "Yerçekimi",
+                simSpeed: "Simülasyon Hızı",
+                collisions: "Çarpışmalar",
+                paused: "Durduruldu",
+                creation: "Oluşturma",
+                color: "Renk",
+                dragToLaunch: "Fırlatmak için sürükle",
+                selectBody: "Cisim seç",
+                multiSelect: "Çoklu seçim",
+                editSelected: "Seçileni Düzenle",
+                physicalProperties: "Fiziksel Özellikler",
+                velocityX: "Hız X",
+                velocityY: "Hız Y",
+                appearance: "Görünüm",
+                applyChanges: "✓ Değişiklikleri Uygula",
+                deleteSelected: "🗑️ Seçilenleri Sil",
+                view: "Görünüm",
+                showGrid: "Izgara Göster",
+                trackSelected: "Seçileni Takip Et",
+                trackCoM: "Kütle Merkezini Takip Et",
+                velocityVectors: "Hız Vektörleri",
+                muteAudio: "Sesi Kapat",
+                resetCamera: "Kamerayı Sıfırla",
+                zoom: "Yakınlaştır",
+                pause: "Duraklat",
+                delete: "Sil",
+                presets: "Ön Ayarlar",
+                solarSystem: "☀️ Güneş Sistemi",
+                binaryStars: "⭐ İkili Yıldızlar",
+                galaxy: "🌌 Galaksi",
+                chaos: "💫 Kaos",
+                figureEight: "∞ Sekiz Şekli",
+                planetMoons: "🌍 Gezegen + Uydular",
+                doubleBinary: "⚡ Çift İkili",
+                tools: "Araçlar",
+                clearAll: "🗑️ Tümünü Temizle"
+            }
+        };
+
+        let currentLanguage = 'en';
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update button states
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            document.getElementById('lang-tr').classList.toggle('active', lang === 'tr');
+            
+            // Update all translatable elements
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+            
+            // Update minimize button text
+            const panel = document.getElementById('side-panel');
+            const btn = document.getElementById('minimize-btn');
+            btn.textContent = panel.classList.contains('minimized') ? 
+                translations[lang].show : translations[lang].hide;
+        }
+
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
@@ -774,7 +958,8 @@
             const panel = document.getElementById('side-panel');
             panel.classList.toggle('minimized');
             const btn = document.getElementById('minimize-btn');
-            btn.textContent = panel.classList.contains('minimized') ? 'Show' : 'Hide';
+            btn.textContent = panel.classList.contains('minimized') ? 
+                translations[currentLanguage].show : translations[currentLanguage].hide;
         }
 
         function clearAll() {
